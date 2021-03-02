@@ -89,7 +89,7 @@
     currency
   };
 
-  const defaults = {
+  const defaults$5 = {
     ref: '[data-bind]',
     filterRef: '[data-filter]',
     filters: DefaultFilters
@@ -105,7 +105,7 @@
 
   function Binder (params) {
     const config = params = {
-      ...defaults,
+      ...defaults$5,
       ...params,
       name: 'Binder'
     };
@@ -234,9 +234,9 @@
     requiredClass: 'execute-required'
   };
 
-  const defaults$1 = { ...config };
+  const defaults$4 = { ...config };
 
-  function getFieldById (fieldId, options) {
+  function getFieldById$1 (fieldId, options) {
     options = {
       returnArray: false,
       ...options
@@ -253,7 +253,7 @@
       : fields[0]
   }
 
-  function getField (field, options) {
+  function getField$1 (field, options) {
     options = {
       returnArray: false,
       ...options
@@ -274,7 +274,7 @@
     }
 
     if (typeof field === 'string') {
-      return getFieldById(field, options)
+      return getFieldById$1(field, options)
     }
   }
 
@@ -289,8 +289,8 @@
     return null
   }
 
-  function clearFieldValues (field) {
-    const $fields = getField(field, { returnArray: true });
+  function clearFieldValues$1 (field) {
+    const $fields = getField$1(field, { returnArray: true });
     const changeEvent = new Event('change');
 
     $fields.forEach(field => {
@@ -299,7 +299,7 @@
 
       if (['text', 'textarea', 'select-one', 'hidden'].includes(fieldType)) {
         if (xType === 'FILE') {
-          clearFileField(field);
+          clearFileField$1(field);
         } else {
           field.value = '';
         }
@@ -311,7 +311,7 @@
     });
   }
 
-  function clearFileField (field) {
+  function clearFileField$1 (field) {
     const id = field.getAttribute('xname').substring(3);
     const deleteBtn = field.parentElement
       .querySelector(`#div${id} > a:last-of-type`);
@@ -321,16 +321,16 @@
     }
   }
 
-  function hasFieldRequired (fields) {
+  function hasFieldRequired$1 (fields) {
     return fields.filter(
       field =>
-        field.getAttribute(defaults$1.dataAttrRequired) ||
+        field.getAttribute(defaults$4.dataAttrRequired) ||
         field.getAttribute('required') === 'S'
     ).length > 0
   }
 
   function onFileChange (field, callback) {
-    const $field = getField(field);
+    const $field = getField$1(field);
     const xType = field.getAttribute('xtype');
 
     if (xType !== 'FILE') {
@@ -370,15 +370,15 @@
     }
   }
 
-  const defaults$2 = { ...config };
+  const defaults$3 = { ...config };
 
-  function addRequired (field, params = {}) {
+  function addRequired$1 (field, params = {}) {
     params = {
-      ...defaults$2,
+      ...defaults$3,
       ...params
     };
 
-    const $fields = getField(field, { returnArray: true });
+    const $fields = getField$1(field, { returnArray: true });
 
     $fields.forEach(field => {
       field.setAttribute('required', 'S');
@@ -391,13 +391,13 @@
     }
   }
 
-  function removeRequired (field, params = {}) {
+  function removeRequired$1 (field, params = {}) {
     params = {
-      ...defaults$2,
+      ...defaults$3,
       ...params
     };
 
-    const $fields = getField(field, { returnArray: true });
+    const $fields = getField$1(field, { returnArray: true });
 
     $fields.forEach(field => {
       field.setAttribute('required', 'N');
@@ -410,41 +410,41 @@
     }
   }
 
-  const defaults$3 = { ...config };
+  const defaults$2 = { ...config };
 
-  function showField (field, params = {}) {
+  function showField$1 (field, params = {}) {
     params = {
-      ...defaults$3,
+      ...defaults$2,
       ...params
     };
 
-    const $fields = getField(field, { returnArray: true });
+    const $fields = getField$1(field, { returnArray: true });
     const $container = $fields[0].closest(params.container);
-    const isRequired = hasFieldRequired($fields);
+    const isRequired = hasFieldRequired$1($fields);
 
     $container.classList.remove(params.hideClass);
 
     if (isRequired) {
-      addRequired($fields, params);
+      addRequired$1($fields, params);
     }
   }
 
-  function hideField (field, params = {}) {
+  function hideField$1 (field, params = {}) {
     params = {
-      ...defaults$3,
+      ...defaults$2,
       ...params
     };
 
-    const $fields = getField(field, { returnArray: true });
+    const $fields = getField$1(field, { returnArray: true });
     const $container = $fields[0].closest(params.container);
-    const isRequired = hasFieldRequired($fields);
+    const isRequired = hasFieldRequired$1($fields);
 
     $container.classList.add(params.hideClass);
 
-    clearFieldValues($fields);
+    clearFieldValues$1($fields);
 
     if (isRequired) {
-      removeRequired($fields, params);
+      removeRequired$1($fields, params);
     }
   }
 
@@ -452,16 +452,16 @@
     const $table = getTable(table);
     const $fields = $table.querySelectorAll('[xname]');
 
-    $fields.forEach(field => showField(field));
-    $table.classList.remove(defaults$3.hideClass);
+    $fields.forEach(field => showField$1(field));
+    $table.classList.remove(defaults$2.hideClass);
   }
 
   function hideTable (table) {
     const $table = getTable(table);
     const $fields = $table.querySelectorAll('[xname]');
 
-    $fields.forEach(field => hideField(field));
-    $table.classList.add(defaults$3.hideClass);
+    $fields.forEach(field => hideField$1(field));
+    $table.classList.add(defaults$2.hideClass);
   }
 
   const GeneralFilesConfig = [{
@@ -552,8 +552,8 @@
         visibleAt.includes(contract) || visibleAt === 'always';
 
       return showDocument
-        ? showField(field)
-        : hideField(field)
+        ? showField$1(field)
+        : hideField$1(field)
     }
 
     function validatePictureFormat (filepath, deleteBtn) {
@@ -593,7 +593,11 @@
     /**
      * 🔑 Public Methods
      */
-    function mount () {
+    function mount ({ readonly }) {
+      if (readonly) {
+        return
+      }
+
       handleSecurityDocs($refs.needBadge.checked);
       addTriggers();
     }
@@ -619,8 +623,8 @@
 
     function onNr10Change (filepath) {
       return filepath
-        ? addRequired($refs.nr10Authorization)
-        : removeRequired($refs.nr10Authorization)
+        ? addRequired$1($refs.nr10Authorization)
+        : removeRequired$1($refs.nr10Authorization)
     }
   };
 
@@ -692,10 +696,6 @@
   }
 
   const DocumentsHealth = function () {
-    const $refs = {
-      table: document.querySelector('#tbl-doumentos-saude')
-    };
-
     return {
       mount
     }
@@ -735,6 +735,307 @@
 
   var DocumentsHealth$1 = DocumentsHealth();
 
+  const defaults$1 = {
+    container: 'tr',
+    hideClass: 'hidden',
+    dataAttrRequired: 'data-was-required',
+    requiredClass: 'execute-required'
+  };
+
+  /**
+   * 💡 Helpers
+   */
+
+  function getFieldById (fieldId, options) {
+    options = {
+      returnArray: false,
+      ...options
+    };
+
+    const fields = document.querySelectorAll(`[xname="inp${fieldId}"]`);
+
+    if (options.returnArray) {
+      return [...fields]
+    }
+
+    return fields.length > 1
+      ? [...fields]
+      : fields[0]
+  }
+
+  function clearFileField (field) {
+    const id = field.getAttribute('xname').substring(3);
+    const deleteBtn = field.parentElement
+      .querySelector(`#div${id} > a:last-of-type`);
+
+    if (deleteBtn) {
+      deleteBtn.click();
+    }
+  }
+
+  function hasFieldRequired (fields) {
+    return fields.filter(
+      field =>
+        field.getAttribute(defaults$1.dataAttrRequired) ||
+        field.getAttribute('required') === 'S'
+    ).length > 0
+  }
+
+  /**
+   * 🧷 Form Utils
+   */
+
+  function getField (field, options) {
+    options = {
+      returnArray: false,
+      ...options
+    };
+
+    if (field instanceof HTMLElement) {
+      return options.returnArray
+        ? [field]
+        : field
+    }
+
+    if (
+      field instanceof HTMLCollection ||
+      field instanceof NodeList ||
+      Array.isArray(field)
+    ) {
+      return [...field]
+    }
+
+    if (typeof field === 'string') {
+      return getFieldById(field, options)
+    }
+  }
+
+  function clearFieldValues (field) {
+    const $fields = getField(field, { returnArray: true });
+    const changeEvent = new Event('change');
+
+    $fields.forEach(field => {
+      const fieldType = field.type;
+      const xType = field.getAttribute('xtype');
+
+      if (['text', 'textarea', 'select-one', 'hidden'].includes(fieldType)) {
+        if (xType === 'FILE') {
+          clearFileField(field);
+        } else {
+          field.value = '';
+        }
+      } else {
+        field.checked = false;
+      }
+
+      field.dispatchEvent(changeEvent);
+    });
+  }
+
+  function showField (field, container = defaults$1.container) {
+    const $fields = getField(field, { returnArray: true });
+    const $container = $fields[0].closest(container);
+    const isRequired = hasFieldRequired($fields);
+
+    $container.classList.remove(defaults$1.hideClass);
+
+    if (isRequired) {
+      addRequired($fields, true);
+    }
+  }
+
+  function hideField (field, container = defaults$1.container) {
+    const $fields = getField(field, { returnArray: true });
+    const $container = $fields[0].closest(container);
+    const isRequired = hasFieldRequired($fields);
+
+    $container.classList.add(defaults$1.hideClass);
+
+    clearFieldValues($fields);
+
+    if (isRequired) {
+      removeRequired($fields, true);
+    }
+  }
+
+  /**
+   * 📌 Form Required
+   */
+
+  function addRequired (field, addClass = false) {
+    const $fields = getField(field, { returnArray: true });
+
+    $fields.forEach(field => {
+      field.setAttribute('required', 'S');
+      field.removeAttribute('data-was-required');
+    });
+
+    if (addClass && defaults$1.container === 'tr') {
+      const $container = $fields[0].closest(defaults$1.container);
+      $container.classList.add(defaults$1.requiredClass);
+    }
+  }
+
+  function removeRequired (field, addClass = false) {
+    const $fields = getField(field, { returnArray: true });
+
+    $fields.forEach(field => {
+      field.setAttribute('required', 'N');
+      field.setAttribute('data-was-required', true);
+    });
+
+    if (addClass && defaults$1.container === 'tr') {
+      const $container = $fields[0].closest(defaults$1.container);
+      $container.classList.remove(defaults$1.requiredClass);
+    }
+  }
+
+  const defaults = {
+    dataAttr: 'data-analysis',
+    toggleMode: 'visibility',
+    fieldPrefix: 'analise',
+    approveButtons: ['#btnFinish', '#BtnSend'],
+    reproveButtons: [],
+    reproveOptions: []
+  };
+
+  function TableDocs (params) {
+    params = {
+      ...defaults,
+      ...params
+    };
+
+    const approveButtons = [
+      ...params.approveButtons
+        .map(btnRef => document.querySelector(btnRef))
+    ];
+
+    const reproveButtons = [
+      ...params.reproveButtons
+        .map(btnRef => document.querySelector(btnRef))
+    ];
+
+    const analysisFields = [
+      ...params.table
+        .querySelectorAll(`[${params.dataAttr}]`)
+    ]
+      .filter(cell => cell.querySelector(`select[xname^=inp${params.fieldPrefix}]`))
+      .map(cell => cell.querySelector(`select[xname^=inp${params.fieldPrefix}]`));
+
+    const instance = {
+      table: params.table,
+      reproveOptions: params.reproveOptions,
+      toggleMode: params.toggleMode,
+      dataAttr: params.dataAttr,
+      approveButtons,
+      reproveButtons,
+      analysisFields
+    };
+
+    addTriggers();
+    renderTable();
+
+    return instance
+
+    /**
+     * 🔒 Private Methods
+     */
+    function addTriggers () {
+      instance.analysisFields.forEach(field => {
+        handleAnalysis();
+        handleObservation(field);
+
+        field.addEventListener('change', () => {
+          handleAnalysis();
+          handleObservation(field);
+        });
+      });
+    }
+
+    function renderTable () {
+      params.table
+        .querySelectorAll(`[${params.dataAttr}]`)
+        .forEach(cell => {
+          cell.style.display = 'table-cell';
+
+          cell
+            .querySelectorAll(`input[xname^=inp${params.fieldPrefix}][type=hidden][xtype=SELECT]`)
+            .forEach(field => {
+              const hasRejection = instance.reproveOptions
+                .includes(field.value);
+
+              if (!hasRejection) {
+                field
+                  .closest('tr')
+                  .querySelector('button')
+                  .style.display = 'none';
+              }
+            });
+        });
+    }
+
+    function hasRejection () {
+      return instance.analysisFields
+        .some(select => instance.reproveOptions
+          .includes(select.value)
+        )
+    }
+
+    function handleAnalysis () {
+      hasRejection()
+        ? disabledConclude()
+        : enableConclude();
+    }
+
+    function disabledConclude () {
+      instance.approveButtons.forEach(btn => {
+        if (btn) {
+          btn.disabled = true;
+        }
+      });
+
+      instance.reproveButtons.forEach(btn => {
+        if (btn) {
+          btn.disabled = false;
+        }
+      });
+    }
+
+    function enableConclude () {
+      instance.approveButtons.forEach(btn => {
+        if (btn) {
+          btn.disabled = false;
+        }
+      });
+
+      instance.reproveButtons.forEach(btn => {
+        if (btn) {
+          btn.disabled = true;
+        }
+      });
+    }
+
+    function handleObservation (analysis) {
+      const observation = analysis.closest('tr')
+        .querySelector('textarea');
+
+      const hasObservation = params.reproveOptions
+        .includes(analysis.value);
+
+      if (instance.toggleMode === 'required') {
+        return hasObservation
+          ? addRequired(observation)
+          : removeRequired(observation)
+      }
+
+      if (instance.toggleMode === 'visibility') {
+        return hasObservation
+          ? showField(observation, 'td')
+          : hideField(observation, 'td')
+      }
+    }
+  }
+
   // import RequestTable from './request-table'
 
   const DocumentsTable = function () {
@@ -744,13 +1045,30 @@
       healthDocsTable: document.querySelector('#tbl-doumentos-saude')
     };
 
+    const tablesConfig = [
+      {
+        table: $refs.generalDocsTable,
+        alias: 'analise-geral'
+      },
+      {
+        table: $refs.securityDocsTable,
+        alias: 'analise-seguranca'
+      },
+      {
+        table: $refs.healthDocsTable,
+        alias: 'analise-saude'
+      }
+    ];
+
     const state = {
       alias: null,
       analysisColumnsRef: '[data-analysis]',
       mountOn: [
         'requisicao',
-        'analise',
-        'correcao'
+        'correcao',
+        'analise-geral',
+        'analise-seguranca',
+        'analise-saude'
       ]
     };
 
@@ -767,21 +1085,6 @@
 
       state.alias = alias;
 
-      // $refs.tables = getTables()
-      // const $tables = Object.values($refs.tables)
-
-      // if (alias === 'requisicao') {
-      //   return $tables
-      //     .forEach(table => RequestTable().mount({ ...table, ...options }))
-      // }
-      // if (alias === 'analise') {
-      //   return $tables
-      //     .forEach(table => AnalysisTable().mount({ ...table, ...options }))
-      // }
-      // if (alias === 'correcao') {
-      //   // mountTableAdjustments()
-      // }
-
       if (hasToMount) {
         mount();
       }
@@ -793,17 +1096,46 @@
     function mount () {
       const { alias } = state;
 
-      DocumentsGeneral$1.mount();
-      DocumentsSecurity$1.mount();
-      DocumentsHealth$1.mount();
+      const readonly = [
+        'analise-geral',
+        'analise-seguranca',
+        'analise-saude',
+        'correcao'
+      ].includes(alias);
+
+      const tables = [
+        $refs.generalDocsTable,
+        $refs.securityDocsTable,
+        $refs.healthDocsTable
+      ];
 
       if (alias === 'requisicao') {
-        [
-          $refs.generalDocsTable,
-          $refs.securityDocsTable,
-          $refs.healthDocsTable
-        ].forEach(hideAnalysisColumns);
+        tables.forEach(hideAnalysisColumns);
+      } else {
+        tablesConfig.forEach(config => {
+          const approveButtons = alias !== 'analise-geral'
+            ? ['#btnFinish']
+            : ['#btnApprove', '#BtnReject'];
+
+          config.alias !== alias
+            ? hideTable(config.table)
+            : TableDocs({
+              table: config.table,
+              approveButtons,
+              reproveOptions: [
+                'Aprovado com ressalva',
+                'Reprovado'
+              ],
+              reproveButtons: [
+                '#customBtn_Pendências'
+              ]
+            });
+        });
       }
+
+      DocumentsGeneral$1.mount();
+      DocumentsSecurity$1.mount({ readonly });
+      DocumentsHealth$1.mount();
     }
 
     function hideAnalysisColumns (table) {
@@ -812,27 +1144,15 @@
         .forEach(col => col.classList.add('u-hidden'));
     }
 
-    // function getTables () {
-    //   return {
-    //     generalDocsTable: {
-    //       table: document.querySelector('#tbl-doumentos-gerais'),
-    //       hasAnalysis: document.querySelector('[xname=inpanaliseGeral]')
-    //     },
-    //     healthDocsTable: {
-    //       table: document.querySelector('#tbl-doumentos-saude'),
-    //       hasAnalysis: document.querySelector('[xname=inpanaliseSaude]')
-    //     },
-    //     securityDocsTable: {
-    //       table: document.querySelector('#tbl-doumentos-seguranca'),
-    //       hasAnalysis: document.querySelector('[xname=inpanaliseSeguranca]')
-    //     }
-    //   }
-    // }
+    function hideTable (table) {
+      table
+        .classList.add('u-hidden');
+    }
   };
 
   var DocumentsTables = DocumentsTable();
 
-  const FormUtilConfig = {
+  const FormUtilConfig$1 = {
     container: '.form-group',
     hideClass: 'u-hidden'
   };
@@ -871,8 +1191,8 @@
         bond === 'Empresa subcontratada por outra empresa, diretamente contratada pela CMPC';
 
       return hasLinkedBond
-        ? showField($refs.linkedCompany, FormUtilConfig)
-        : hideField($refs.linkedCompany, FormUtilConfig)
+        ? showField$1($refs.linkedCompany, FormUtilConfig$1)
+        : hideField$1($refs.linkedCompany, FormUtilConfig$1)
     }
 
     function getEmployeeBond () {
@@ -891,7 +1211,8 @@
       contractingCompanyCard: document.querySelector('#company-card'),
       linkedCompanyCard: document.querySelector('#linked-company-card'),
       contractingCompany: document.querySelector('[xname=inpempresaRazaoSocial]'),
-      linkedCompany: document.querySelector('[xname=inpempresaVinculadaRazaoSocial]')
+      linkedCompany: document.querySelector('[xname=inpempresaVinculadaRazaoSocial]'),
+      companyFieldsContainer: document.querySelector('#company-fields')
     };
 
     return {
@@ -901,7 +1222,7 @@
     /**
      * 🔑 Public Methods
      */
-    function mount () {
+    function mount ({ readonly }) {
       handleCompany(
         $refs.contractingCompany.value,
         $refs.contractingCompanyCard
@@ -913,6 +1234,10 @@
       );
 
       addTriggers();
+
+      if (readonly) {
+        hideFormFields();
+      }
     }
 
     /**
@@ -943,11 +1268,16 @@
     function hideCompanyCard (card) {
       card.classList.add('u-hidden');
     }
+
+    function hideFormFields () {
+      $refs.companyFieldsContainer
+        .classList.add('u-hidden');
+    }
   };
 
   var RequestCompany$1 = RequestCompany();
 
-  const FormUtilConfig$1 = {
+  const FormUtilConfig = {
     container: '.form-group',
     hideClass: 'u-hidden'
   };
@@ -1022,18 +1352,18 @@
 
     function showForeignForm () {
       fields.foreign
-        .forEach(fieldId => showField(fieldId, FormUtilConfig$1));
+        .forEach(fieldId => showField$1(fieldId, FormUtilConfig));
 
       fields.native
-        .forEach(fieldId => hideField(fieldId, FormUtilConfig$1));
+        .forEach(fieldId => hideField$1(fieldId, FormUtilConfig));
     }
 
     function showNativeForm () {
       fields.native
-        .forEach(fieldId => showField(fieldId, FormUtilConfig$1));
+        .forEach(fieldId => showField$1(fieldId, FormUtilConfig));
 
       fields.foreign
-        .forEach(fieldId => hideField(fieldId, FormUtilConfig$1));
+        .forEach(fieldId => hideField$1(fieldId, FormUtilConfig));
 
       // @todo preencher como brasileiro no campo oculto
     }
@@ -1055,10 +1385,11 @@
     const state = {
       alias: null,
       mountOn: [
-        'requisicao'
-        // ,
-        // 'analise',
-        // 'correcao'
+        'requisicao',
+        'analise-geral',
+        'analise-seguranca',
+        'analise-saude',
+        'correcao'
       ]
     };
 
@@ -1084,21 +1415,35 @@
      * 🔒 Private Methods
      */
     function mount () {
+      const { alias } = state;
+      const readonly = [
+        'analise-geral',
+        'analise-seguranca',
+        'analise-saude',
+        'correcao'
+      ].includes(alias);
 
-      RequestContract$1.mount();
-      RequestCompany$1.mount();
+      if (alias === 'requisicao') {
+        RequestContract$1.mount();
+      }
+
+      RequestCompany$1.mount({ readonly });
       RequestEmployee$1.mount();
 
       /**
        * @todo
+       * - criar fonte para pesquisa do campo treinamento ETS: valores - Não encontrado / Encontrado
        * - criar fn request company somente leitura
        * - criar card de colaborador qnd somente leitura, avaliar uso de tabs qnd somente leitura
-       * - criar componente para validação de form, bloquei do botão, validação do cpf...
        * - criar componente de tooltip
        * - ajustar fonte de dados de nacionalidade e preencher como brasileiro quando nativo
+       * - criar componente para validação de form, bloqueio do botão, validação do cpf...
        * - realizar chamda a fonte para validar duplicidade de cadastro via cpf
-       * - ver outras chamadas SQL que são usadas no Lecom
-       * - colunas descricaoPedido (DESCON) e centroDeCusto (CA_CCUSTO_FORMATADO) não estão sendo utilizadas, remover?
+       *
+       * @prioridade
+       * - quando marcar o campo checkbox "inpcolaboradorHabilitacoesCracha" colocar o valor "sim" no campo "analiseSeguranca" (remover preenchimento automático da config.)
+       * @next
+       * - colunas descricaoPedido (DESCON) e centroDeCusto (CA_CCUSTO_FORMATADO) não estão sendo utilizadas. talvez incluir descrição no card da empresa
        */
     }
   };
