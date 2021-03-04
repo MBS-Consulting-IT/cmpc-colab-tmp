@@ -161,10 +161,10 @@
           return
         }
 
-        setValue({ element, field, filter });
+        setValue({ element, field, filter, id });
 
         $(field).on(events, () => {
-          setValue({ element, field, filter });
+          setValue({ element, field, filter, id });
         });
       });
     }
@@ -187,8 +187,9 @@
       }
     }
 
-    function setValue ({ element, field, filter }) {
+    function setValue ({ element, field, filter, id }) {
       const type = field.type;
+      const fieldText = document.querySelector(`div[xid=div${id}]`);
       const hasFilter = filter && config.filters[filter];
 
       if (type === 'radio' && !field.checked) {
@@ -197,7 +198,9 @@
 
       const value = hasFilter
         ? config.filters[filter](field.value)
-        : field.value;
+        : field.type !== 'hidden'
+          ? field.value
+          : fieldText.textContent;
 
       element.innerHTML = value;
     }
@@ -497,6 +500,9 @@
   }];
 
   const HealthFilesValidity = [{
+    issue: document.querySelector('[xname=inpasoDataDeEmissao]'),
+    validity: document.querySelector('[xname=inpasoValidade]')
+  }, {
     issue: document.querySelector('[xname=inpemissaoTestePcr]'),
     validity: document.querySelector('[xname=inpvalidadeTestePcr]')
   }, {
@@ -593,11 +599,7 @@
     /**
      * 🔑 Public Methods
      */
-    function mount ({ readonly }) {
-      if (readonly) {
-        return
-      }
-
+    function mount () {
       handleSecurityDocs($refs.needBadge.checked);
       addTriggers();
     }
@@ -669,11 +671,6 @@
     numbers += verifierDigit(numbers);
 
     return numbers.substr(-2) === stripped.substr(-2)
-  }
-
-  function formatCpf (cpf) {
-    return strip(cpf)
-      .replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4')
   }
 
   function verifierDigit (numbers) {
@@ -896,7 +893,8 @@
     fieldPrefix: 'analise',
     approveButtons: ['#btnFinish', '#BtnSend'],
     reproveButtons: [],
-    reproveOptions: []
+    reproveOptions: [],
+    blockOptions: []
   };
 
   function TableDocs (params) {
@@ -925,6 +923,7 @@
     const instance = {
       table: params.table,
       reproveOptions: params.reproveOptions,
+      blockOptions: params.blockOptions,
       toggleMode: params.toggleMode,
       dataAttr: params.dataAttr,
       approveButtons,
@@ -954,6 +953,21 @@
 
     function renderTable () {
       params.table
+        .querySelectorAll('tr')
+        .forEach(row => {
+          const fileInput = row.querySelector('td:nth-child(2) input[xtype=FILE]');
+          const value = fileInput ? fileInput.value : null;
+
+          if (value !== '') {
+            return
+          }
+
+          row.style.display = 'none';
+          row.querySelectorAll('[xname]')
+            .forEach(field => field.setAttribute('required', 'N'));
+        });
+
+      params.table
         .querySelectorAll(`[${params.dataAttr}]`)
         .forEach(cell => {
           cell.style.display = 'table-cell';
@@ -961,28 +975,54 @@
           cell
             .querySelectorAll(`input[xname^=inp${params.fieldPrefix}][type=hidden][xtype=SELECT]`)
             .forEach(field => {
+              const row = field.closest('tr');
+
+              const hasBlock = instance.blockOptions
+                .includes(field.value);
+
               const hasRejection = instance.reproveOptions
                 .includes(field.value);
 
-              if (!hasRejection) {
-                field
-                  .closest('tr')
-                  .querySelector('button')
-                  .style.display = 'none';
+              if (!hasBlock) {
+                renderRowReadOnly(row);
+
+                row.querySelector('button')
+                  .style
+                  .display = 'none';
+              }
+
+              if (hasBlock) {
+                return row.classList.add('-error')
+              }
+
+              if (hasRejection) {
+                return row.classList.add('-warning')
               }
             });
         });
     }
 
-    function hasRejection () {
+    function renderRowReadOnly (row) {
+      const rowFields = row
+        .querySelectorAll('select[xname], input[xname][type=text]:not([xtype=FILE])');
+
+      rowFields.forEach(field => {
+        const value = field.value;
+
+        field.style.display = 'none';
+        field.insertAdjacentHTML('afterend', `<span>${value}</span>`);
+      });
+    }
+
+    function hasBlock () {
       return instance.analysisFields
-        .some(select => instance.reproveOptions
+        .some(select => instance.blockOptions
           .includes(select.value)
         )
     }
 
     function handleAnalysis () {
-      hasRejection()
+      hasBlock()
         ? disabledConclude()
         : enableConclude();
     }
@@ -1030,13 +1070,11 @@
 
       if (instance.toggleMode === 'visibility') {
         return hasObservation
-          ? showField(observation, 'td')
-          : hideField(observation, 'td')
+          ? showField(observation, '.form-group')
+          : hideField(observation, '.form-group')
       }
     }
   }
-
-  // import RequestTable from './request-table'
 
   const DocumentsTable = function () {
     const $refs = {
@@ -1096,61 +1134,48 @@
     function mount () {
       const { alias } = state;
 
-      const readonly = [
-        'analise-geral',
-        'analise-seguranca',
-        'analise-saude',
-        'correcao'
-      ].includes(alias);
-
-      const tables = [
-        $refs.generalDocsTable,
-        $refs.securityDocsTable,
-        $refs.healthDocsTable
-      ];
-
-      if (alias === 'requisicao') {
-        tables.forEach(hideAnalysisColumns);
-      } else {
-        tablesConfig.forEach(config => {
-          const approveButtons = alias !== 'analise-geral'
-            ? ['#btnFinish']
-            : ['#btnApprove', '#BtnReject'];
-
-          config.alias !== alias
-            ? hideTable(config.table)
-            : TableDocs({
-              table: config.table,
-              approveButtons,
-              reproveOptions: [
-                'Aprovado com ressalva',
-                'Reprovado'
-              ],
-              reproveButtons: [
-                '#customBtn_Pendências'
-              ]
-            });
-        });
+      if (alias === 'requisicao' || alias === 'correcao') {
+        DocumentsHealth$1.mount();
       }
 
-      DocumentsGeneral$1.mount();
-      DocumentsSecurity$1.mount({ readonly });
-      DocumentsHealth$1.mount();
+      if (alias === 'requisicao') {
+        DocumentsGeneral$1.mount();
+        DocumentsSecurity$1.mount();
+      } else {
+        tablesConfig.forEach(handleTables);
+      }
+
+      // DocumentsSecurity.mount({ readonly })
     }
 
-    function hideAnalysisColumns (table) {
-      table
-        .querySelectorAll(state.analysisColumnsRef)
-        .forEach(col => col.classList.add('u-hidden'));
+    function handleTables ({ table, alias }) {
+      return [alias, 'correcao'].includes(state.alias)
+        ? mountTable(table)
+        : unmountTable(table)
     }
 
-    function hideTable (table) {
-      table
-        .classList.add('u-hidden');
+    function mountTable (table) {
+      const approveButtons = state.alias !== 'analise-geral'
+        ? ['#btnFinish']
+        : ['#btnApprove', '#BtnReject'];
+
+      TableDocs({
+        table,
+        approveButtons,
+        reproveButtons: ['#customBtn_Pendências'],
+        reproveOptions: ['Aprovado com ressalva', 'Reprovado'],
+        blockOptions: ['Reprovado']
+      });
+    }
+
+    function unmountTable (table) {
+      table.classList.add('u-hidden');
     }
   };
 
   var DocumentsTables = DocumentsTable();
+
+  // import { showField, hideField } from '../../components/form-util/visibility'
 
   const FormUtilConfig$1 = {
     container: '.form-group',
@@ -1206,13 +1231,45 @@
 
   var RequestContract$1 = RequestContract();
 
+  const getControllerButtons = () =>
+    document
+      .querySelector('#controllers')
+      .querySelectorAll('button.btn');
+
+  function disableConclude () {
+    getControllerButtons()
+      .forEach(btn => {
+        btn.disabled = true;
+      });
+  }
+
+  function enableConclude () {
+    getControllerButtons()
+      .forEach(btn => {
+        btn.disabled = false;
+      });
+  }
+
   const RequestCompany = function () {
     const $refs = {
       contractingCompanyCard: document.querySelector('#company-card'),
       linkedCompanyCard: document.querySelector('#linked-company-card'),
+      companyFieldsContainer: document.querySelector('#company-fields'),
       contractingCompany: document.querySelector('[xname=inpempresaRazaoSocial]'),
-      linkedCompany: document.querySelector('[xname=inpempresaVinculadaRazaoSocial]'),
-      companyFieldsContainer: document.querySelector('#company-fields')
+      contractingCompanyRequest: document.querySelector('[xname=inpempresaPedidoSap]'),
+      linkedCompany: document.querySelector('[xname=inpempresaVinculadaRazaoSocial]')
+    };
+
+    const state = {
+      contractingCompanyFields: [
+        $refs.contractingCompany,
+        $refs.contractingCompanyRequest
+      ],
+      linkedCompanyFields: [
+        $refs.contractingCompany,
+        $refs.contractingCompanyRequest,
+        $refs.linkedCompany
+      ]
     };
 
     return {
@@ -1224,12 +1281,12 @@
      */
     function mount ({ readonly }) {
       handleCompany(
-        $refs.contractingCompany.value,
+        state.contractingCompanyFields,
         $refs.contractingCompanyCard
       );
 
       handleCompany(
-        $refs.linkedCompany.value,
+        state.linkedCompanyFields,
         $refs.linkedCompanyCard
       );
 
@@ -1244,21 +1301,31 @@
      * 🔒 Private Methods
      */
     function addTriggers () {
-      $refs.contractingCompany
-        .addEventListener('change', e =>
-          handleCompany(e.target.value, $refs.contractingCompanyCard)
+      state.contractingCompanyFields
+        .forEach(field =>
+          field.addEventListener('change', () =>
+            handleCompany(
+              state.contractingCompanyFields,
+              $refs.contractingCompanyCard
+            )
+          )
         );
 
-      $refs.linkedCompany
-        .addEventListener('change', e =>
-          handleCompany(e.target.value, $refs.linkedCompanyCard)
+      state.linkedCompanyFields
+        .forEach(field =>
+          field.addEventListener('change', () =>
+            handleCompany(
+              state.linkedCompanyFields,
+              $refs.linkedCompanyCard
+            )
+          )
         );
     }
 
-    function handleCompany (company, card) {
-      return company !== ''
-        ? showCompanyCard(card)
-        : hideCompanyCard(card)
+    function handleCompany (deps, card) {
+      return deps.some(field => field.value === '')
+        ? hideCompanyCard(card)
+        : showCompanyCard(card)
     }
 
     function showCompanyCard (card) {
@@ -1277,15 +1344,61 @@
 
   var RequestCompany$1 = RequestCompany();
 
+  const ORQUESTRA_BLOCKLIST_URL =
+    'https://cmpc.orquestrabpm.com.br/api/internal/legacy/1.0/datasource/get/1.0' +
+    '/qw0Xk6xWKL563BI8VvBqJk4y6mPjvrmxBQq6eoT8pt8ur8KUEZgwGJytjQ7dnXqMrz9lai2J91TCIoxPbrW8Mg__';
+
+  const validateCpfFromBlockList = function ({ cpf }) {
+    const url = new URL(ORQUESTRA_BLOCKLIST_URL);
+
+    const params = {
+      inpcpf: cpf.replace(/\D/g, '')
+    };
+
+    url.search = new URLSearchParams(params).toString();
+
+    return fetch(url)
+      .then(res => res.json())
+      .then(({ success }) => {
+        if (!success.length) {
+          return false
+        }
+
+        return parseData(success[0])
+      })
+  };
+
+  const parseData = ({ cod, fields }) => ({
+    cpf: cod,
+    blockType: getBlockType(fields.tipoBloqueio)
+  });
+
+  const getBlockType = type => {
+    if (type === 'P') {
+      return 'META_PENDENCIE'
+    }
+
+    if (type === 'B') {
+      return 'BLOCKED_CPF'
+    }
+
+    return null
+  };
+
   const FormUtilConfig = {
     container: '.form-group',
     hideClass: 'u-hidden'
   };
 
   const RequestEmployee = function () {
+    const BRAZILIAN_NATIONALITY_ID = 10;
+
     const $refs = {
+      employeeCard: document.querySelector('#employee-card'),
+      employeeFieldsContainer: document.querySelector('#employee-fields'),
       contractType: document.querySelector('[xname=inptipoDeContrato]'),
-      cpf: document.querySelector('[xname=inpcolaboradorCpf]')
+      cpf: document.querySelector('[xname=inpcolaboradorCpf]'),
+      nationality: document.querySelector('[xname=inpcolaboradorNacionalidade]')
     };
 
     const fields = {
@@ -1313,6 +1426,23 @@
       ]
     };
 
+    const card = {
+      native: [
+        document.querySelector('#employee-card-cpf'),
+        document.querySelector('#employee-card-startAt'),
+        document.querySelector('#employee-card-native')
+      ],
+      foreign: [
+        document.querySelector('#employee-card-rne'),
+        document.querySelector('#employee-card-foreign')
+      ]
+    };
+
+    const state = {
+      static: false,
+      readonly: false
+    };
+
     return {
       mount
     }
@@ -1320,10 +1450,28 @@
     /**
      * 🔑 Public Methods
      */
-    function mount () {
-      handleEmployeeFields($refs.contractType.value);
-      validateCpf($refs.cpf.value);
+    function mount ({ alias }) {
+      const contractType = $refs.contractType.value;
 
+      state.static = [
+        'analise-geral',
+        'analise-seguranca',
+        'analise-saude',
+        'correcao'
+      ].includes(alias);
+
+      state.readonly = [
+        'analise-geral',
+        'analise-seguranca',
+        'analise-saude',
+        'correcao'
+      ].includes(alias);
+
+      if (state.readonly) {
+        return setReadonly(contractType)
+      }
+
+      handleEmployeeFields(contractType);
       addTriggers();
     }
 
@@ -1344,8 +1492,32 @@
         );
     }
 
-    function handleEmployeeFields (type) {
-      return type === 'Estrangeiro'
+    function setReadonly (contractType) {
+      $refs.employeeFieldsContainer
+        .classList.add('u-hidden');
+
+      $refs.employeeCard
+        .classList.remove('u-hidden');
+
+      return contractType === 'Estrangeiro'
+        ? mountForeignCard()
+        : mountNativeCard()
+    }
+
+    function mountNativeCard () {
+      card.foreign.forEach(el =>
+        el.classList.add('u-hidden')
+      );
+    }
+
+    function mountForeignCard () {
+      card.native.forEach(el =>
+        el.classList.add('u-hidden')
+      );
+    }
+
+    function handleEmployeeFields (contractType) {
+      return contractType === 'Estrangeiro'
         ? showForeignForm()
         : showNativeForm()
     }
@@ -1356,6 +1528,10 @@
 
       fields.native
         .forEach(fieldId => hideField$1(fieldId, FormUtilConfig));
+
+      if (!state.static) {
+        $refs.nationality.value = '';
+      }
     }
 
     function showNativeForm () {
@@ -1365,16 +1541,96 @@
       fields.foreign
         .forEach(fieldId => hideField$1(fieldId, FormUtilConfig));
 
-      // @todo preencher como brasileiro no campo oculto
+      if (!state.static) {
+        $refs.nationality.value = BRAZILIAN_NATIONALITY_ID;
+      }
     }
 
     function validateCpf (cpf) {
+      removeFieldHint($refs.cpf);
+
       if (cpf === '') {
         return
       }
 
       if (!isCpfValid(cpf)) {
-        return alert(`O CPF informado não possui um formato válido.\n${formatCpf(cpf)}`)
+        disableConclude();
+        return addFieldHint(
+          $refs.cpf,
+          'O CPF informado não possui um formato válido',
+          'error'
+        )
+      }
+
+      addFieldLoading($refs.cpf);
+
+      validateCpfFromBlockList({ cpf })
+        .then(handleCpfBlockListResult)
+        .catch(handleCpfBlockListError);
+    }
+
+    function handleCpfBlockListError (err) {
+      removeFieldLoading($refs.cpf);
+      console.error(err);
+    }
+
+    function handleCpfBlockListResult (block) {
+      removeFieldLoading($refs.cpf);
+
+      if (!block) {
+        enableConclude();
+        addFieldHint(
+          $refs.cpf,
+          'O CPF informado é válido!',
+          'success'
+        );
+      } else {
+        disableConclude();
+        addFieldHint(
+          $refs.cpf,
+          getCpfErrorMessage(block.blockType),
+          'error'
+        );
+      }
+    }
+
+    function getCpfErrorMessage (blockType) {
+      if (blockType === 'META_PENDENCIE') {
+        return 'O CPF informado tem pendências a tratar com a META'
+      }
+
+      if (blockType === 'BLOCKED_CPF') {
+        return 'O CPF informado está bloqueado pela CMPC'
+      }
+
+      return 'O CPF informado não é permitido'
+    }
+
+    function addFieldLoading (field) {
+      const wrapper = field.closest('.form-input');
+      wrapper.classList.add('-loading');
+    }
+
+    function removeFieldLoading (field) {
+      const wrapper = field.closest('.form-input');
+      wrapper.classList.remove('-loading');
+    }
+
+    function addFieldHint (field, message, modifier) {
+      const group = field.closest('.form-group');
+
+      group.insertAdjacentHTML(
+        'beforeend',
+        `<span class="form-hint ${modifier ? '-' + modifier : ''}">${message}</span>`
+      );
+    }
+
+    function removeFieldHint (field) {
+      const group = field.closest('.form-group');
+      const hint = group.querySelector('.form-hint');
+
+      if (hint) {
+        hint.remove();
       }
     }
   };
@@ -1428,23 +1684,7 @@
       }
 
       RequestCompany$1.mount({ readonly });
-      RequestEmployee$1.mount();
-
-      /**
-       * @todo
-       * - criar fonte para pesquisa do campo treinamento ETS: valores - Não encontrado / Encontrado
-       * - criar fn request company somente leitura
-       * - criar card de colaborador qnd somente leitura, avaliar uso de tabs qnd somente leitura
-       * - criar componente de tooltip
-       * - ajustar fonte de dados de nacionalidade e preencher como brasileiro quando nativo
-       * - criar componente para validação de form, bloqueio do botão, validação do cpf...
-       * - realizar chamda a fonte para validar duplicidade de cadastro via cpf
-       *
-       * @prioridade
-       * - quando marcar o campo checkbox "inpcolaboradorHabilitacoesCracha" colocar o valor "sim" no campo "analiseSeguranca" (remover preenchimento automático da config.)
-       * @next
-       * - colunas descricaoPedido (DESCON) e centroDeCusto (CA_CCUSTO_FORMATADO) não estão sendo utilizadas. talvez incluir descrição no card da empresa
-       */
+      RequestEmployee$1.mount({ alias });
     }
   };
 
